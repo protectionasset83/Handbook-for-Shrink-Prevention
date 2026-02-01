@@ -1,5 +1,8 @@
-[
-  "Always verify item count at self checkout",
-  "Do not override alerts without visual confirmation",
-  "Escalate suspicious activity to Asset Protection"
-]
+{
+  "rules": [
+    "Rule one",
+    "Rule two"
+  ],
+  "reasonCodes": [],
+  "lossCodes": []
+}
