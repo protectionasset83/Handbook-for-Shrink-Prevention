@@ -1,8 +1,227 @@
 {
-  "rules": [
-    "Rule one",
-    "Rule two"
+  "rules": [],
+  "lossCodes": [
+    {
+      "number": "1",
+      "title": "Failed to Scan",
+      "definition": "Customer failed to scan at all, or attempted and failed at scanning item"
+    },
+    {
+      "number": "2",
+      "title": "Associate Gave Away",
+      "definition": "Associate and/or customer have issues scanning item and Associate indicates to take the item and doesn't require item to be added to transaction"
+    },
+    {
+      "number": "3",
+      "title": "EPP Prompt",
+      "definition": "Customer or Cashier scans item at the time that the register is processing an EPP prompt"
+    },
+    {
+      "number": "4",
+      "title": "Invalid UPC",
+      "definition": "Customer or Cashier scans item but Invalid UPC message prompts; either that item or additional items scanned with prompt are not added to transaction"
+    },
+    {
+      "number": "5",
+      "title": "Military Verification",
+      "definition": "Customer or Cashier scans items while Military Verification process is ongoing, and scans do not add items to transaction"
+    },
+    {
+      "number": "6",
+      "title": "MLR Loyalty Entry",
+      "definition": "Customer or Cashier scans items while MyLowesRewards process is ongoing, and scans do not add items to transaction"
+    },
+    {
+      "number": "7",
+      "title": "Nudge Screen",
+      "definition": "Customer or Cashier scans items while on Nudge screen, and scans do not add items to transaction"
+    },
+    {
+      "number": "8",
+      "title": "Other System Error",
+      "definition": "Any register system error or glitch"
+    },
+    {
+      "number": "9",
+      "title": "Paint Tint",
+      "definition": "Transaction where paint tint prompt causes loss"
+    },
+    {
+      "number": "10",
+      "title": "Pay by Scan Error",
+      "definition": "System issue with Pay by Scan product that causes product not to ring up correctly"
+    },
+    {
+      "number": "11",
+      "title": "Pay Screen",
+      "definition": "Customer or Cashier scans items while on Pay Screen/payment mode, and scans do not add items to transaction"
+    },
+    {
+      "number": "12",
+      "title": "Removed Item",
+      "definition": "Customer or cashier removes item but fails to give item back to store and leaves with item"
+    },
+    {
+      "number": "13",
+      "title": "Register Reset",
+      "definition": "Customer or Cashier scans items while register is resetting from prior customer and scan does not add to transaction"
+    },
+    {
+      "number": "14",
+      "title": "Scan with Prompt on Screen",
+      "definition": "Customer or Cashier scans items while register has a prompt and scan does not add to transaction"
+    },
+    {
+      "number": "15",
+      "title": "Ticket Switching",
+      "definition": "Items present are barcode-switched or one item scanned in lieu of another"
+    },
+    {
+      "number": "16",
+      "title": "Walkoff",
+      "definition": "Customer starts transaction or scanning but takes items and leaves store without finalizing the transaction or paying"
+    }
   ],
-  "reasonCodes": [],
-  "lossCodes": []
+  "reasonCodes": [
+    {
+      "number": "1",
+      "title": "Product Detected as Several Products",
+      "definition": "Long handle tools counted separately; bent items counted twice; labels or UPC counted as items"
+    },
+    {
+      "number": "2",
+      "title": "Product Multiple Detections",
+      "definition": "Item counted with multiple detections"
+    },
+    {
+      "number": "3",
+      "title": "Coffee Cup (Personal Item)",
+      "definition": "Disposable coffee cup"
+    },
+    {
+      "number": "4",
+      "title": "Card Detected as Product",
+      "definition": "Gift cards, credit/debit cards, IDs detected as products"
+    },
+    {
+      "number": "5",
+      "title": "Customer Brought In Matching Item",
+      "definition": "Customer brought in items that CV cannot distinguish from sellable items"
+    },
+    {
+      "number": "6",
+      "title": "Accidental Pay Button Press",
+      "definition": "Customer or Cashier accidentally presses Pay while still scanning"
+    },
+    {
+      "number": "7",
+      "title": "Detected Item is Not a Product",
+      "definition": "Cash, paint chips, paperwork or similar items"
+    },
+    {
+      "number": "8",
+      "title": "Glare/Shadow Detected",
+      "definition": "Glare or shadow counted as a product"
+    },
+    {
+      "number": "9",
+      "title": "Hand Keyed / Non-Physical Item",
+      "definition": "Items not physically present at register"
+    },
+    {
+      "number": "10",
+      "title": "No Discrepancy",
+      "definition": "CV count matched items present"
+    },
+    {
+      "number": "11",
+      "title": "Item Already Paid – Other Terminal",
+      "definition": "Customer paid at another terminal or online"
+    },
+    {
+      "number": "12",
+      "title": "Item Already Paid – Same Terminal",
+      "definition": "Customer completed another transaction"
+    },
+    {
+      "number": "13",
+      "title": "Item Detected but Not Counted",
+      "definition": "Item detected but not included in item count"
+    },
+    {
+      "number": "14",
+      "title": "Item Left Behind",
+      "definition": "Customer left item behind or gave it to cashier"
+    },
+    {
+      "number": "15",
+      "title": "Item Not in Transaction Area",
+      "definition": "Item outside transaction area"
+    },
+    {
+      "number": "16",
+      "title": "Item Out of View of Camera",
+      "definition": "Item not visible to camera"
+    },
+    {
+      "number": "17",
+      "title": "Items Sold by the Foot/Bulk",
+      "definition": "Item sold by length or bulk quantity"
+    },
+    {
+      "number": "18",
+      "title": "Multiple SKUs in One Package",
+      "definition": "Multi-pack items counted separately"
+    },
+    {
+      "number": "19",
+      "title": "Non-Lowe’s Personal Item",
+      "definition": "Personal belongings detected as items"
+    },
+    {
+      "number": "20",
+      "title": "Other Customer’s Item – In Motion",
+      "definition": "Another customer’s items moving behind transaction"
+    },
+    {
+      "number": "21",
+      "title": "Other Customer’s Item – Static",
+      "definition": "Another customer’s items placed in transaction area"
+    },
+    {
+      "number": "22",
+      "title": "Recall/Suspended Transaction",
+      "definition": "Items already bagged or suspended"
+    },
+    {
+      "number": "23",
+      "title": "Scan Gun Wire Detected",
+      "definition": "Scan gun head or wire counted as product"
+    },
+    {
+      "number": "24",
+      "title": "Stacked Items",
+      "definition": "Items stacked preventing individual visibility"
+    },
+    {
+      "number": "25",
+      "title": "Static Items in Transaction Area",
+      "definition": "Safety cones, receipts, brooms, etc."
+    },
+    {
+      "number": "26",
+      "title": "Stickers Detected as Product",
+      "definition": "Stickers or labels on SCO detected as items"
+    },
+    {
+      "number": "27",
+      "title": "Unknown Reason",
+      "definition": "No other reason applies"
+    },
+    {
+      "number": "28",
+      "title": "Visible Item Not Detected",
+      "definition": "Item visible but not identified by CV"
+    }
+  ]
 }
