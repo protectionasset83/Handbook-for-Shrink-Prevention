@@ -67,9 +67,27 @@
     saveKey(STORAGE_KEYS.loss, state.lossCodes);
   }
 
-  async function loadAll() {
-    // 1) Load from local storage first (fast/offline fallback).
-    loadFromLocalStorage();
+  async function loadFromRulesJson() {
+  try {
+    const res = await fetch("./rules.json", { cache: "no-store" });
+    const data = await res.json();
+
+    state.rules = Array.isArray(data.rules) ? data.rules : [];
+    state.reasonCodes = Array.isArray(data.reasonCodes) ? data.reasonCodes : [];
+    state.lossCodes = Array.isArray(data.lossCodes) ? data.lossCodes : [];
+
+  } catch (e) {
+    console.error("Failed to load rules.json", e);
+    state.rules = [];
+    state.reasonCodes = [];
+    state.lossCodes = [];
+  }
+}
+/* 👆 END ADD 👆 */
+
+async function loadAll() {
+  // Load from local storage first
+  loadFromLocalStorage();
 
     // 2) If served over http/https, also load the shared server state.
     if (API_ENABLED) {
@@ -1018,7 +1036,7 @@
     state.adminToken = localStorage.getItem(AUTH_TOKEN_KEY);
     if (state.adminToken) state.isAdmin = true;
 
-    await loadAll();
+    await loadFromRulesJson();
 
     attachShellListeners();
     setView("infographic");
