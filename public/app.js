@@ -1,6 +1,5 @@
-/* Shrink Prevention Website
- * READ-ONLY VERSION
- * Rules are loaded permanently from rules.json (GitHub)
+/* Shrink Prevention – Read-Only Permanent Version
+ * Rules loaded from rules.json (GitHub)
  * No admin, no saving, no localStorage
  */
 
@@ -11,116 +10,127 @@
   const STICKY_COLORS = ["#FEF08A","#FBCFE8","#BFDBFE","#BBF7D0","#DDD6FE","#FED7AA"];
   const ROTATIONS = [2,-2,1,-1];
 
-  const $ = (sel) => document.querySelector(sel);
+  const $ = (s) => document.querySelector(s);
 
   const state = {
     rules: [],
+    reasonCodes: [],
+    lossCodes: [],
     viewMode: "infographic",
     searchQuery: "",
-    currentPage: 1
+    currentPage: 1,
+    expandedCodeKey: null
   };
 
-  async function loadRules() {
-    try {
-      const res = await fetch("./rules.json", { cache: "no-store" });
-      if (!res.ok) throw new Error("Failed to load rules.json");
-      const data = await res.json();
-      state.rules = Array.isArray(data) ? data : [];
-    } catch (e) {
-      console.error(e);
-      state.rules = [];
-    }
+  async function loadData() {
+    const res = await fetch("./rules.json", { cache: "no-store" });
+    const data = await res.json();
+    state.rules = Array.isArray(data.rules) ? data.rules : data;
+    state.reasonCodes = data.reasonCodes || [];
+    state.lossCodes = data.lossCodes || [];
   }
 
   function getFilteredRules() {
     const q = state.searchQuery.toLowerCase().trim();
-    if (!q) return state.rules;
-    return state.rules.filter(r => r.toLowerCase().includes(q));
+    return q ? state.rules.filter(r => r.toLowerCase().includes(q)) : state.rules;
   }
 
   function renderInfographic() {
-    const rulesPerPage = 10;
-    const filtered = getFilteredRules();
-    const totalPages = Math.max(1, Math.ceil(filtered.length / rulesPerPage));
-    state.currentPage = Math.min(state.currentPage, totalPages);
-
-    const start = (state.currentPage - 1) * rulesPerPage;
-    const pageRules = filtered.slice(start, start + rulesPerPage);
-
-    const cards = pageRules.map(rule => {
-      const idx = state.rules.indexOf(rule);
-      const color = COLORS[idx % COLORS.length];
-      return `
-        <article class="card">
-          <div class="card-border" style="background:${color};"></div>
-          <div class="rule-head">
-            <div class="badge" style="background:${color};">${idx + 1}</div>
-            <div class="rule-text">${rule}</div>
-          </div>
-        </article>
-      `;
-    }).join("");
-
-    const pager = totalPages > 1 ? `
-      <div class="pagination">
-        <button class="btn btn-ghost" ${state.currentPage===1?"disabled":""} data-p="prev">◀</button>
-        <div class="page-pill">Page ${state.currentPage} of ${totalPages}</div>
-        <button class="btn btn-ghost" ${state.currentPage===totalPages?"disabled":""} data-p="next">▶</button>
-      </div>
-    ` : "";
-
+    const rules = getFilteredRules();
     return `
       <section class="view bg-infographic">
         <div class="container">
           <div class="view-title">Shrink Prevention Rules</div>
-          <div class="grid">${cards || "<div>No rules available</div>"}</div>
-          ${pager}
+          <div class="grid">
+            ${rules.map((r,i)=>`
+              <article class="card">
+                <div class="card-border" style="background:${COLORS[i%COLORS.length]}"></div>
+                <div class="rule-head">
+                  <div class="badge" style="background:${COLORS[i%COLORS.length]}">${i+1}</div>
+                  <div class="rule-text">${r}</div>
+                </div>
+              </article>
+            `).join("")}
+          </div>
         </div>
-      </section>
-    `;
+      </section>`;
   }
 
   function renderSticky() {
-    const filtered = getFilteredRules();
     return `
       <section class="view bg-sticky">
-        <div class="container sticky-wrap">
-          ${filtered.map(rule => {
-            const idx = state.rules.indexOf(rule);
-            return `
-              <div class="sticky" style="background:${STICKY_COLORS[idx % STICKY_COLORS.length]};transform:rotate(${ROTATIONS[idx % ROTATIONS.length]}deg)">
-                <div class="sticky-top">Rule #${idx + 1}</div>
-                <div class="sticky-text">${rule}</div>
+        <div class="container">
+          <div class="view-title">Shrink Prevention Rules</div>
+          <div class="sticky-wrap">
+            ${state.rules.map((r,i)=>`
+              <div class="sticky" style="background:${STICKY_COLORS[i%STICKY_COLORS.length]};transform:rotate(${ROTATIONS[i%ROTATIONS.length]}deg)">
+                <div class="sticky-top">Rule #${i+1}</div>
+                <div class="sticky-text">${r}</div>
               </div>
-            `;
-          }).join("")}
+            `).join("")}
+          </div>
         </div>
-      </section>
-    `;
+      </section>`;
+  }
+
+  function renderCodes(title, list) {
+    return `
+      <section class="view bg-codes">
+        <div class="container">
+          <div class="view-title">${title}</div>
+          ${list.length ? list.map((c,i)=>`
+            <div class="code-item">
+              <div class="code-num">${c.number}</div>
+              <div class="code-title">${c.title}</div>
+              <div class="code-def">${c.definition || ""}</div>
+            </div>
+          `).join("") : `<div class="panel">No data available</div>`}
+        </div>
+      </section>`;
   }
 
   function render() {
     const main = $("#main");
     if (!main) return;
-    main.innerHTML = state.viewMode === "sticky" ? renderSticky() : renderInfographic();
+
+    if (state.viewMode === "sticky") main.innerHTML = renderSticky();
+    else if (state.viewMode === "reason") main.innerHTML = renderCodes("Reason Codes", state.reasonCodes);
+    else if (state.viewMode === "loss") main.innerHTML = renderCodes("Loss Codes", state.lossCodes);
+    else main.innerHTML = renderInfographic();
   }
 
-  function boot() {
-    $("#searchInput").addEventListener("input", e => {
-      state.searchQuery = e.target.value;
-      render();
-    });
+  function attach() {
+    $("#menuBtn").onclick = () => {
+      $("#sidebar").classList.toggle("hidden");
+      $("#overlay").classList.toggle("hidden");
+    };
+    $("#overlay").onclick = () => {
+      $("#sidebar").classList.add("hidden");
+      $("#overlay").classList.add("hidden");
+    };
 
-    document.querySelectorAll(".nav-btn").forEach(btn => {
-      btn.addEventListener("click", () => {
-        state.viewMode = btn.dataset.view;
+    document.querySelectorAll(".nav-btn").forEach(b=>{
+      b.onclick=()=>{
+        state.viewMode=b.dataset.view;
         render();
-      });
+        $("#sidebar").classList.add("hidden");
+        $("#overlay").classList.add("hidden");
+      };
     });
 
-    loadRules().then(render);
+    $("#searchInput").oninput=(e)=>{
+      state.searchQuery=e.target.value;
+      render();
+    };
+  }
+
+  async function boot() {
+    await loadData();
+    attach();
+    render();
   }
 
   boot();
 })();
+
 
