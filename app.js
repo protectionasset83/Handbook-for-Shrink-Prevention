@@ -648,22 +648,102 @@ async function loadAll() {
 
   // Event listeners
   function attachShellListeners() {
-  $("#searchInput").addEventListener("input", (e) => {
-    ...
+
+  $("#menuBtn").addEventListener("click", () => {
+    const hidden = $("#sidebar").classList.contains("hidden");
+    hidden ? openSidebar() : closeSidebar();
   });
 
-    $("#adminLoginBtn").addEventListener("click", () => {
-      openAdminLoginModal();
-    });
+  $("#overlay").addEventListener("click", closeSidebar);
 
-    $("#adminLogoutBtn").addEventListener("click", () => {
-      state.isAdmin = false;
-      state.adminToken = null;
-      state.editingRuleIndex = null;
-      localStorage.removeItem(AUTH_TOKEN_KEY);
-      toast("Logged out.");
+  $("#searchInput").addEventListener("input", (e) => {
+    state.searchQuery = e.target.value || "";
+    state.currentPage = 1;
+    render();
+  });
+
+  $("#main").addEventListener("click", (e) => {
+    const t = e.target;
+    if (!(t instanceof HTMLElement)) return;
+
+    const actionEl = t.closest("[data-action]");
+    const action = actionEl ? actionEl.getAttribute("data-action") : null;
+    if (!action) return;
+
+    if (action === "page-prev") {
+      state.currentPage = Math.max(1, state.currentPage - 1);
       render();
-    });
+      return;
+    }
+
+    if (action === "page-next") {
+      const filtered = getFilteredRules();
+      const totalPages = Math.max(
+        1,
+        Math.ceil(filtered.length / state.rowsPerPage)
+      );
+      state.currentPage = Math.min(totalPages, state.currentPage + 1);
+      render();
+      return;
+    }
+
+    if (action === "page-number") {
+      const page = Number(actionEl.getAttribute("data-page"));
+      if (!Number.isInteger(page)) return;
+      state.currentPage = page;
+      render();
+      return;
+    }
+
+    if (action === "report") {
+      const idx = Number(actionEl.getAttribute("data-index"));
+      reportRuleModal(idx);
+      return;
+    }
+
+    if (action === "edit-rule") {
+      if (!state.isAdmin) return;
+      const idx = Number(actionEl.getAttribute("data-index"));
+      state.editingRuleIndex = idx;
+      setView("input");
+      closeSidebar();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+
+    if (action === "delete-rule") {
+      if (!state.isAdmin) return;
+      const idx = Number(actionEl.getAttribute("data-index"));
+      const rule = state.rules[idx];
+      confirmModal({
+        title: "Confirm Delete",
+        body: `<div class="kv"><div class="k">Delete rule #${idx + 1}?</div><div class="v">${escapeHtml(rule)}</div></div>`,
+        confirmText: "Delete",
+        confirmAction: "confirm-delete-rule",
+        danger: true,
+      });
+      setTimeout(() => {
+        const btn = document.querySelector(
+          '#modalRoot [data-action="confirm-delete-rule"]'
+        );
+        if (btn) btn.setAttribute("data-index", String(idx));
+      }, 0);
+      return;
+    }
+  });
+
+  $("#adminLoginBtn").addEventListener("click", openAdminLoginModal);
+
+  $("#adminLogoutBtn").addEventListener("click", () => {
+    state.isAdmin = false;
+    state.adminToken = null;
+    state.editingRuleIndex = null;
+    localStorage.removeItem(AUTH_TOKEN_KEY);
+    toast("Logged out.");
+    render();
+  });
+}
+
 
     // Modal close + action delegation
     $("#modalRoot").addEventListener("click", (e) => {
