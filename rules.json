@@ -60,7 +60,6 @@
     "We select the primary loss reason code that covers the largest quantity of missed items.",
     "We differentiate item variants within a box, such as single-pole versus two-pole breakers, when confirming quantities."
   ]
-}
   "lossCodes": [
     {
       "number": "1",
