@@ -34,6 +34,7 @@
     searchQuery: "",
     currentPage: 1,
     expandedCodeKey: null,
+    rowsPerPage: 10,
     isAdmin: false,
     adminToken: null,
     serverOnline: null,
@@ -284,7 +285,7 @@ async function loadAll() {
   }
 
   function renderInfographicView() {
-    const rulesPerPage = 10;
+    const rulesPerPage = state.rowsPerPage;
     const filtered = getFilteredRules();
     const totalPages = Math.max(1, Math.ceil(filtered.length / rulesPerPage));
     state.currentPage = clamp(state.currentPage, 1, totalPages);
@@ -336,7 +337,20 @@ async function loadAll() {
     return `
       <section class="view bg-infographic">
         <div class="container">
-          <div class="view-title">Shrink Prevention Rules</div>
+          <div class="view-title-row">
+  <div class="view-title">Shrink Prevention Rules</div>
+
+  <div class="rows-selector">
+  <label for="rowsSelect">Rows:</label>
+  <select id="rowsSelect">
+    ${[5, 10, 20, 30, 50].map(n => `
+      <option value="${n}" ${state.rowsPerPage === n ? "selected" : ""}>
+        ${n}
+      </option>
+    `).join("")}
+  </select>
+</div>
+</div>
           ${renderHeaderMessage()}
           ${empty}
           <div class="grid">${cards}</div>
@@ -347,7 +361,7 @@ async function loadAll() {
   }
 
   function renderStickyView() {
-    const rulesPerPage = 10;
+    const rulesPerPage = state.rowsPerPage;
     const filtered = getFilteredRules();
     const totalPages = Math.max(1, Math.ceil(filtered.length / rulesPerPage));
     state.currentPage = clamp(state.currentPage, 1, totalPages);
@@ -634,25 +648,9 @@ async function loadAll() {
 
   // Event listeners
   function attachShellListeners() {
-    $("#menuBtn").addEventListener("click", () => {
-      const hidden = $("#sidebar").classList.contains("hidden");
-      hidden ? openSidebar() : closeSidebar();
-    });
-    $("#overlay").addEventListener("click", closeSidebar);
-
-    document.querySelectorAll(".nav-btn").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        const view = btn.getAttribute("data-view");
-        setView(view);
-        closeSidebar();
-      });
-    });
-
-    $("#searchInput").addEventListener("input", (e) => {
-      state.searchQuery = e.target.value || "";
-      state.currentPage = 1;
-      render();
-    });
+  $("#searchInput").addEventListener("input", (e) => {
+    ...
+  });
 
     $("#adminLoginBtn").addEventListener("click", () => {
       openAdminLoginModal();
@@ -786,13 +784,13 @@ async function loadAll() {
         render();
         return;
       }
-      if (action === "page-next") {
-        const filtered = getFilteredRules();
-        const totalPages = Math.max(1, Math.ceil(filtered.length / 10));
-        state.currentPage = Math.min(totalPages, state.currentPage + 1);
-        render();
-        return;
-      }
+     if (action === "page-next") {
+  const filtered = getFilteredRules();
+  const totalPages = Math.max(1, Math.ceil(filtered.length / state.rowsPerPage));
+  state.currentPage = Math.min(totalPages, state.currentPage + 1);
+  render();
+  return;
+}
 
       if (action === "report") {
         const idx = Number(actionEl.getAttribute("data-index"));
@@ -1001,34 +999,46 @@ async function loadAll() {
 
     // Import file input
     document.addEventListener("change", (e) => {
-      const t = e.target;
-      if (!(t instanceof HTMLInputElement)) return;
-      if (t.id !== "importFile") return;
-      const file = t.files && t.files[0];
-      if (!file) return;
+  const t = e.target;
+  if (!(t instanceof HTMLElement)) return;
 
-      const reader = new FileReader();
-      reader.onload = () => {
-        try {
-          const payload = JSON.parse(String(reader.result || "{}"));
-          const rules = Array.isArray(payload.rules) ? payload.rules : [];
-          const reason = Array.isArray(payload.reasonCodes) ? payload.reasonCodes : [];
-          const loss = Array.isArray(payload.lossCodes) ? payload.lossCodes : [];
-          state.rules = rules;
-          state.reasonCodes = reason;
-          state.lossCodes = loss;
-          saveAll();
-          toast("Import complete.");
-          render();
-        } catch {
-          toast("Import failed: invalid JSON file.", "error");
-        } finally {
-          // reset input so same file can be selected again
-          t.value = "";
-        }
-      };
-      reader.readAsText(file);
-    });
+  // ✅ Rows-per-page dropdown
+  if (t.id === "rowsSelect") {
+    state.rowsPerPage = Number(t.value);
+    state.currentPage = 1;
+    render();
+    return;
+  }
+
+  // ✅ Import file input (existing logic)
+  if (!(t instanceof HTMLInputElement)) return;
+  if (t.id !== "importFile") return;
+
+  const file = t.files && t.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const payload = JSON.parse(String(reader.result || "{}"));
+      const rules = Array.isArray(payload.rules) ? payload.rules : [];
+      const reason = Array.isArray(payload.reasonCodes) ? payload.reasonCodes : [];
+      const loss = Array.isArray(payload.lossCodes) ? payload.lossCodes : [];
+      state.rules = rules;
+      state.reasonCodes = reason;
+      state.lossCodes = loss;
+      saveAll();
+      toast("Import complete.");
+      render();
+    } catch {
+      toast("Import failed: invalid JSON file.", "error");
+    } finally {
+      t.value = "";
+    }
+  };
+  reader.readAsText(file);
+});
+
   }
 
   async function boot() {
