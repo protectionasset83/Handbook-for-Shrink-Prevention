@@ -403,15 +403,29 @@ async function loadAll() {
       .join("");
 
     const pager =
-      totalPages > 1
-        ? `
-          <div class="pagination">
-            <button class="btn btn-ghost" data-action="page-prev" ${state.currentPage === 1 ? "disabled" : ""}>◀</button>
-            <div class="page-pill">Page ${state.currentPage} of ${totalPages}</div>
-            <button class="btn btn-ghost" data-action="page-next" ${state.currentPage === totalPages ? "disabled" : ""}>▶</button>
-          </div>
-        `
-        : "";
+  totalPages > 1
+    ? `
+      <div class="pagination">
+        <button class="btn btn-ghost" data-action="page-prev" ${state.currentPage === 1 ? "disabled" : ""}>◀</button>
+
+        ${Array.from({ length: totalPages }, (_, i) => i + 1)
+          .slice(
+            Math.max(0, state.currentPage - 3),
+            Math.min(totalPages, state.currentPage + 2)
+          )
+          .map(p => `
+            <button
+              class="page-btn ${p === state.currentPage ? "active-page" : ""}"
+              data-action="page-number"
+              data-page="${p}">
+              ${p}
+            </button>
+          `).join("")}
+
+        <button class="btn btn-ghost" data-action="page-next" ${state.currentPage === totalPages ? "disabled" : ""}>▶</button>
+      </div>
+    `
+    : "";
 
     const empty = filtered.length === 0 ? `<div class="panel" style="text-align:center;">No rules available</div>` : "";
 
