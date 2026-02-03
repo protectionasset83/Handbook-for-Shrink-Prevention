@@ -284,6 +284,8 @@ body{
   font-size: 16px;
   line-height: 1.45;
   color: #374151;
+  text-align: justify;
+  hyphens: auto;
   white-space: pre-wrap;
   /* Reserve space so the report "!" button never overlaps the first line */
   padding-right: 52px;
@@ -385,6 +387,8 @@ body{
 .sticky .sticky-top{
   font-weight:700;
   font-size: 14px;
+  text-align: justify;
+  hyphens: auto;
   margin-bottom: 10px;
 }
 .sticky .sticky-text{
