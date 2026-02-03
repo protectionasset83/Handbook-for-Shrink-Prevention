@@ -326,11 +326,24 @@ async function loadAll() {
         ? `
           <div class="pagination">
             <button class="btn btn-ghost" data-action="page-prev" ${state.currentPage === 1 ? "disabled" : ""}>◀</button>
-            <div class="page-pill">Page ${state.currentPage} of ${totalPages}</div>
-            <button class="btn btn-ghost" data-action="page-next" ${state.currentPage === totalPages ? "disabled" : ""}>▶</button>
-          </div>
-        `
-        : "";
+            ${Array.from({ length: totalPages }, (_, i) => i + 1)
+          .slice(
+            Math.max(0, state.currentPage - 3),
+            Math.min(totalPages, state.currentPage + 2)
+          )
+          .map(p => `
+            <button
+              class="page-btn ${p === state.currentPage ? "active-page" : ""}"
+              data-action="page-number"
+              data-page="${p}">
+              ${p}
+            </button>
+          `).join("")}
+
+        <button class="btn btn-ghost" data-action="page-next" ${state.currentPage === totalPages ? "disabled" : ""}>▶</button>
+      </div>
+    `
+    : "";
 
     const empty = filtered.length === 0 ? `<div class="panel" style="text-align:center;">No rules available</div>` : "";
 
@@ -341,12 +354,12 @@ async function loadAll() {
           <div style="margin-bottom:10px;">
   <label style="font-size:14px;">Rows:</label>
   <select id="rowsSelect">
-    <option value="5">5</option>
-    <option value="10" selected>10</option>
-    <option value="20">20</option>
-    <option value="30">30</option>
-    <option value="50">50</option>
-  </select>
+  ${[5, 10, 20, 30, 50].map(n => `
+    <option value="${n}" ${state.rowsPerPage === n ? "selected" : ""}>
+      ${n}
+    </option>
+  `).join("")}
+</select>
 </div>
           ${renderHeaderMessage()}
           ${empty}
@@ -797,13 +810,25 @@ async function loadAll() {
         render();
         return;
       }
+      
       if (action === "page-next") {
-        const filtered = getFilteredRules();
-        const totalPages = Math.max(1, Math.ceil(filtered.length / 10));
-        state.currentPage = Math.min(totalPages, state.currentPage + 1);
-        render();
-        return;
-      }
+    const filtered = getFilteredRules();
+    const totalPages = Math.max(
+      1,
+      Math.ceil(filtered.length / state.rowsPerPage)
+    );
+    state.currentPage = Math.min(totalPages, state.currentPage + 1);
+    render();
+    return;
+  }
+
+  if (action === "page-number") {
+    const page = Number(actionEl.getAttribute("data-page"));
+    if (!Number.isInteger(page)) return;
+    state.currentPage = page;
+    render();
+    return;
+  }
 
       if (action === "report") {
         const idx = Number(actionEl.getAttribute("data-index"));
