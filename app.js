@@ -33,6 +33,7 @@
     viewMode: "infographic",
     searchQuery: "",
     currentPage: 1,
+    rowsPerPage: 10,
     expandedCodeKey: null,
     isAdmin: false,
     adminToken: null,
@@ -284,7 +285,7 @@ async function loadAll() {
   }
 
   function renderInfographicView() {
-    const rulesPerPage = 10;
+    const rulesPerPage = state.rowsPerPage;
     const filtered = getFilteredRules();
     const totalPages = Math.max(1, Math.ceil(filtered.length / rulesPerPage));
     state.currentPage = clamp(state.currentPage, 1, totalPages);
@@ -337,6 +338,16 @@ async function loadAll() {
       <section class="view bg-infographic">
         <div class="container">
           <div class="view-title">Shrink Prevention Rules</div>
+          <div style="margin-bottom:10px;">
+  <label style="font-size:14px;">Rows:</label>
+  <select id="rowsSelect">
+    <option value="5">5</option>
+    <option value="10" selected>10</option>
+    <option value="20">20</option>
+    <option value="30">30</option>
+    <option value="50">50</option>
+  </select>
+</div>
           ${renderHeaderMessage()}
           ${empty}
           <div class="grid">${cards}</div>
@@ -1002,6 +1013,12 @@ async function loadAll() {
     // Import file input
     document.addEventListener("change", (e) => {
       const t = e.target;
+      if (t.id === "rowsSelect") {
+  state.rowsPerPage = Number(t.value);
+  state.currentPage = 1;
+  render();
+  return;
+}
       if (!(t instanceof HTMLInputElement)) return;
       if (t.id !== "importFile") return;
       const file = t.files && t.files[0];
