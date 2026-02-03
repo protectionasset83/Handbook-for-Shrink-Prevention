@@ -10,7 +10,7 @@
   "We use Static Items in the Transaction Area when detections are caused by stationary non-merchandise items or leftovers from a prior customer.",
   "We use Pay Screen when scans occur in payment mode and do not add items to the transaction, and we use Pay by Scan Error only for Pay by Scan system issues.",
   "We use Scan with Prompt on Screen when a prompt such as a protection plan is on screen and the scan does not add the item to the transaction."
-  ]
+  ],
   "lossCodes": [
     {
       "number": "1",
