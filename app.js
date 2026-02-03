@@ -321,12 +321,13 @@ async function loadAll() {
       })
       .join("");
 
-    const pager =
-      totalPages > 1
-        ? `
-          <div class="pagination">
-            <button class="btn btn-ghost" data-action="page-prev" ${state.currentPage === 1 ? "disabled" : ""}>◀</button>
-            ${Array.from({ length: totalPages }, (_, i) => i + 1)
+   const pager =
+  totalPages > 1
+    ? `
+      <div class="pagination">
+        <button class="btn btn-ghost" data-action="page-prev" ${state.currentPage === 1 ? "disabled" : ""}>◀</button>
+
+        ${Array.from({ length: totalPages }, (_, i) => i + 1)
           .slice(
             Math.max(0, state.currentPage - 3),
             Math.min(totalPages, state.currentPage + 2)
@@ -344,6 +345,7 @@ async function loadAll() {
       </div>
     `
     : "";
+
 
     const empty = filtered.length === 0 ? `<div class="panel" style="text-align:center;">No rules available</div>` : "";
 
@@ -371,7 +373,7 @@ async function loadAll() {
   }
 
   function renderStickyView() {
-    const rulesPerPage = 10;
+    const rulesPerPage = state.rowsPerPage;
     const filtered = getFilteredRules();
     const totalPages = Math.max(1, Math.ceil(filtered.length / rulesPerPage));
     state.currentPage = clamp(state.currentPage, 1, totalPages);
@@ -417,6 +419,16 @@ async function loadAll() {
       <section class="view bg-sticky">
         <div class="container">
           <div class="view-title">Shrink Prevention Rules</div>
+          <div style="margin-bottom:10px;">
+  <label style="font-size:14px;">Rows:</label>
+  <select id="rowsSelect">
+    ${[5, 10, 20, 30, 50].map(n => `
+      <option value="${n}" ${state.rowsPerPage === n ? "selected" : ""}>
+        ${n}
+      </option>
+    `).join("")}
+  </select>
+</div>
           ${renderHeaderMessage()}
           ${empty}
           <div class="sticky-wrap">${notes}</div>
