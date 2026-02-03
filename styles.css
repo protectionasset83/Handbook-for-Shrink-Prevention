@@ -549,3 +549,54 @@ textarea:focus{outline:none; box-shadow: var(--ring); border-color: rgba(31,74,1
   display:block;
   padding: 10px 0;
 }
+/* Header row with title + rows selector */
+.view-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Rows dropdown */
+.rows-selector {
+  font-size: 14px;
+}
+
+.rows-selector select {
+  padding: 4px 6px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}
+
+/* Pagination */
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  margin-top: 20px;
+}
+
+.page-btn {
+  border: none;
+  background: transparent;
+  padding: 6px 10px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.page-btn:hover {
+  background: rgba(0,0,0,0.05);
+  border-radius: 50%;
+}
+
+.page-btn.active {
+  background: #2563eb;
+  color: #fff;
+  border-radius: 50%;
+}
+
+.ellipsis {
+  padding: 0 6px;
+  color: #999;
+}
