@@ -1,5 +1,4 @@
 {
-  "rules": [{
   "rules": [
     "We verify the case link and store are correct before reviewing the transaction.",
     "We confirm whether suspected items were brought into the store or are personal by reviewing entry and other relevant cameras before flagging.",
@@ -62,7 +61,6 @@
     "We differentiate item variants within a box, such as single-pole versus two-pole breakers, when confirming quantities."
   ]
 }
-],
   "lossCodes": [
     {
       "number": "1",
