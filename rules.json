@@ -215,7 +215,7 @@
     },
     {
       "number": "6",
-      "title": "Accidental Pay Button Press",
+      "title": "Customer/Associate Accidentally Pressed Pay Button",
       "definition": "Customer or Cashier accidentally presses Pay while still scanning"
     },
     {
@@ -235,7 +235,7 @@
     },
     {
       "number": "10",
-      "title": "No Discrepancy",
+      "title": "I Agree There Is No Discrepancy",
       "definition": "CV count matched items present"
     },
     {
