@@ -600,3 +600,11 @@ textarea:focus{outline:none; box-shadow: var(--ring); border-color: rgba(31,74,1
   padding: 0 6px;
   color: #999;
 }
+
+/* Hide admin / manage UI safely */
+[data-view="input"],     /* Manage Rules button */
+.sidebar-footer,         /* Admin login + text */
+#adminLoginBtn,
+#adminLogoutBtn {
+  display: none !important;
+}
