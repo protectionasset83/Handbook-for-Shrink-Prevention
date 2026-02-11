@@ -1,6 +1,7 @@
 {
   "rules": [
     "We verify the case link and store are correct before reviewing the transaction.",
+    "We confirm that the transaction is completed online, when a blue sticker is observed on the products.",
     "We confirm whether suspected items were brought into the store or are personal by reviewing entry and other relevant cameras before flagging.",
     "We search 3.4 for the correct transaction and review scans, removals, and quantity edits across nearby registers or terminals to confirm payment or legitimate corrections before marking loss.",
     "We evaluate recall or suspended transactions based on what the camera shows at the time the transaction is recalled and completed with the item present.",
