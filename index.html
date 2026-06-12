@@ -8,36 +8,6 @@
   <link rel="stylesheet" href="styles.css" />
   <script defer src="app.js"></script>
 </head>
-  <button id="chatToggle" class="chat-toggle" aria-label="Open handbook assistant">💬</button>
-
-<section id="chatPanel" class="chat-panel hidden" aria-label="Handbook assistant">
-  <div class="chat-header">
-    <div>
-      <div class="chat-title">Handbook Assistant</div>
-      <div class="chat-subtitle">Answers only from your shrink-prevention rules</div>
-    </div>
-    <button id="chatClose" class="chat-close" aria-label="Close">×</button>
-  </div>
-
-  <div id="chatMessages" class="chat-messages">
-    <div class="chat-msg bot">
-      Hi — ask me a handbook question.<br>
-      Example: <em>There is a blue sticker on the product. Is it already paid?</em>
-    </div>
-  </div>
-
-  <form id="chatForm" class="chat-form">
-    <input
-      id="chatInput"
-      type="text"
-      placeholder="Ask a handbook question..."
-      autocomplete="off"
-    />
-    <button type="submit">Ask</button>
-  </form>
-</section>
-
-<script defer src="chatbot-v3.js"></script>
 <body>
   <header class="topbar">
     <button id="menuBtn" class="icon-btn" aria-label="Open menu" title="Menu">
@@ -85,7 +55,6 @@
   </aside>
 
   <main id="main" class="main" aria-live="polite"></main>
-
   <div id="modalRoot" class="modal-root" aria-live="assertive"></div>
 </body>
 </html>
