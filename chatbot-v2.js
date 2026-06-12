@@ -39,30 +39,6 @@
     state.knowledge.lossCodes = Array.isArray(data.lossCodes) ? data.lossCodes : [];
   }
 
-  function findRuleIncludes(phrases) {
-    const items = state.knowledge.rules || [];
-    return items.filter(rule => {
-      const text = normalize(rule);
-      return phrases.some(p => text.includes(normalize(p)));
-    });
-  }
-
-  function findReasonIncludes(phrases) {
-    const items = state.knowledge.reasonCodes || [];
-    return items.filter(code => {
-      const text = normalize(`${code.title}. ${code.definition}`);
-      return phrases.some(p => text.includes(normalize(p)));
-    });
-  }
-
-  function findLossIncludes(phrases) {
-    const items = state.knowledge.lossCodes || [];
-    return items.filter(code => {
-      const text = normalize(`${code.title}. ${code.definition}`);
-      return phrases.some(p => text.includes(normalize(p)));
-    });
-  }
-
   function hasAny(text, phrases) {
     const t = normalize(text);
     return phrases.some(p => t.includes(normalize(p)));
@@ -161,6 +137,19 @@ Best approach:
 Confirm what happened to the item before deciding whether it is unpaid.`;
   }
 
+  function answerNonSellableItem() {
+    return `First confirm whether the item is actually sellable merchandise.
+
+What you should do:
+- Check whether it is scrap wood, damaged cut-off material, or other non-sellable leftover material.
+- Confirm whether it is a normal sellable lumber product or just unusable scrap.
+- Review the item appearance and surrounding context before calling it loss.
+- Compare it with sellable inventory standards used in that area if needed.
+
+Best approach:
+If it is scrap or non-sellable material, it should not be treated as sellable loss.`;
+  }
+
   function answerGeneric() {
     return `I would not make a loss decision immediately.
 
@@ -179,15 +168,69 @@ Use the transaction details and video together, then decide.`;
 
     const mentionsBlueSticker = hasAny(q, ["blue sticker"]);
     const mentions34 = hasAny(q, ["3.4", "genesis 3.4"]);
-    const mentionsCantFind = hasAny(q, ["can't find", "cant find", "cannot find", "not found", "nothing in 3.4", "unable to find"]);
-    const mentionsMissedScan = hasAny(q, ["didn't scan", "didnt scan", "did not scan", "not scanned", "missed scan", "scan not registered"]);
-    const mentionsPaid = hasAny(q, ["already paid", "prepaid", "pre paid", "paid online", "paid at another terminal", "other terminal", "pickup"]);
-    const mentionsPersonal = hasAny(q, ["personal item", "brought in", "customer brought in"]);
-    const mentionsBarcode = hasAny(q, ["barcode", "ticket switching", "wrong barcode"]);
-    const mentionsScanIssue = hasAny(q, ["failed to scan", "scan issue", "didn't scan", "did not scan", "not scanned"]);
+    const mentionsCantFind = hasAny(q, [
+      "can't find",
+      "cant find",
+      "cannot find",
+      "not found",
+      "nothing in 3.4",
+      "unable to find"
+    ]);
+    const mentionsMissedScan = hasAny(q, [
+      "didn't scan",
+      "didnt scan",
+      "did not scan",
+      "not scanned",
+      "missed scan",
+      "scan not registered"
+    ]);
+    const mentionsPaid = hasAny(q, [
+      "already paid",
+      "prepaid",
+      "pre paid",
+      "paid online",
+      "paid at another terminal",
+      "other terminal",
+      "pickup"
+    ]);
+    const mentionsPersonal = hasAny(q, [
+      "personal item",
+      "brought in",
+      "customer brought in"
+    ]);
+    const mentionsBarcode = hasAny(q, [
+      "barcode",
+      "ticket switching",
+      "wrong barcode"
+    ]);
+    const mentionsScanIssue = hasAny(q, [
+      "failed to scan",
+      "scan issue",
+      "didn't scan",
+      "did not scan",
+      "not scanned"
+    ]);
+    const mentionsNonSellable = hasAny(q, [
+      "scrap wood",
+      "scrap lumber",
+      "non sellable",
+      "not sellable",
+      "sellable lumber",
+      "lumber product",
+      "scrap",
+      "sample",
+      "empty packaging",
+      "giveaway",
+      "not merchandise",
+      "non merchandise"
+    ]);
 
     if (mentionsBlueSticker) {
       return answerBlueSticker();
+    }
+
+    if (mentionsNonSellable) {
+      return answerNonSellableItem();
     }
 
     if (mentions34 && mentionsCantFind && mentionsMissedScan) {
@@ -196,10 +239,6 @@ Use the transaction details and video together, then decide.`;
 
     if (mentions34 && mentionsCantFind) {
       return answerCantFindIn34();
-    }
-
-    if (mentionsPaid) {
-      return answerPaidOtherTerminal();
     }
 
     if (mentionsPersonal) {
@@ -214,14 +253,8 @@ Use the transaction details and video together, then decide.`;
       return answerScanIssue();
     }
 
-    const paidRules = findRuleIncludes(["already paid", "paid at a different register", "paid at another terminal", "completed online", "pickup"]);
-    if (paidRules.length) {
+    if (mentionsPaid) {
       return answerPaidOtherTerminal();
-    }
-
-    const personalRules = findRuleIncludes(["brought into the store", "personal item", "brought in"]);
-    if (personalRules.length) {
-      return answerPersonalItem();
     }
 
     return answerGeneric();
