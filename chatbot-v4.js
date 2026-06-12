@@ -1,8 +1,12 @@
 (() => {
-  console.log("chatbot-v5 loaded");
+  console.log("chatbot-v4 loaded");
 
   const state = {
-    knowledge: []
+    knowledge: [],
+    lastQuestion: "",
+    lastAnswer: "",
+    lastMatches: [],
+    feedbackGiven: false
   };
 
   const chatToggle = document.getElementById("chatToggle");
@@ -11,6 +15,9 @@
   const chatForm = document.getElementById("chatForm");
   const chatInput = document.getElementById("chatInput");
   const chatMessages = document.getElementById("chatMessages");
+  const chatFeedback = document.getElementById("chatFeedback");
+  const thumbsUpBtn = document.getElementById("thumbsUpBtn");
+  const thumbsDownBtn = document.getElementById("thumbsDownBtn");
 
   const GLOSSARY = {
     "loss": "Loss means unpaid sellable merchandise that should have been paid for but was not properly included in the completed transaction.",
@@ -41,6 +48,43 @@ Kindly request that this scenario be added to the handbook if needed.`;
     div.textContent = text;
     chatMessages.appendChild(div);
     chatMessages.scrollTop = chatMessages.scrollHeight;
+  }
+
+  function resetFeedbackUI() {
+    state.feedbackGiven = false;
+    if (chatFeedback) chatFeedback.classList.add("hidden");
+    if (thumbsUpBtn) thumbsUpBtn.classList.remove("active");
+    if (thumbsDownBtn) thumbsDownBtn.classList.remove("active");
+  }
+
+  function showFeedbackUI() {
+    if (chatFeedback) chatFeedback.classList.remove("hidden");
+  }
+
+  function saveFeedback(type) {
+    if (!state.lastQuestion || !state.lastAnswer || state.feedbackGiven) return;
+
+    const existing = JSON.parse(localStorage.getItem("handbookChatFeedback") || "[]");
+    existing.push({
+      question: state.lastQuestion,
+      answer: state.lastAnswer,
+      feedback: type,
+      matches: state.lastMatches,
+      timestamp: new Date().toISOString()
+    });
+    localStorage.setItem("handbookChatFeedback", JSON.stringify(existing));
+
+    state.feedbackGiven = true;
+
+    if (type === "up") {
+      thumbsUpBtn?.classList.add("active");
+      thumbsDownBtn?.classList.remove("active");
+      addMessage("Thanks — I’ll treat that as a useful answer pattern.", "bot");
+    } else {
+      thumbsDownBtn?.classList.add("active");
+      thumbsUpBtn?.classList.remove("active");
+      addMessage("Thanks — please consider adding this scenario to the handbook if it should be covered.", "bot");
+    }
   }
 
   async function loadKnowledge() {
@@ -258,11 +302,26 @@ Use the strongest matching handbook rule together with the transaction and camer
   }
 
   async function handleAsk(question) {
+    resetFeedbackUI();
     addMessage(question, "user");
+
     const matches = findBestMatches(question, 3);
     const answer = buildAnswer(question, matches);
+
+    state.lastQuestion = question;
+    state.lastAnswer = answer;
+    state.lastMatches = matches.map(m => ({
+      label: m.label,
+      text: m.text,
+      score: m.score
+    }));
+
     addMessage(answer, "bot");
+    showFeedbackUI();
   }
+
+  thumbsUpBtn?.addEventListener("click", () => saveFeedback("up"));
+  thumbsDownBtn?.addEventListener("click", () => saveFeedback("down"));
 
   if (chatToggle) {
     chatToggle.addEventListener("click", () => {
@@ -289,7 +348,7 @@ Use the strongest matching handbook rule together with the transaction and camer
   }
 
   loadKnowledge().then(() => {
-    console.log("chatbot-v5 knowledge loaded");
+    console.log("chatbot-v6 knowledge loaded");
   }).catch(() => {
     addMessage(
       "I could not load the handbook rules. Please make sure rules.json is in the same folder as index.html.",
