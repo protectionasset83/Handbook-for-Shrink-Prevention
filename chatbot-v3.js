@@ -1,12 +1,8 @@
 (() => {
-  console.log("chatbot-v3 loaded");
+  console.log("chatbot-v4 loaded");
 
   const state = {
-    knowledge: {
-      rules: [],
-      reasonCodes: [],
-      lossCodes: []
-    }
+    knowledge: []
   };
 
   const chatToggle = document.getElementById("chatToggle");
@@ -24,6 +20,10 @@
       .trim();
   }
 
+  function tokenize(text) {
+    return normalize(text).split(" ").filter(Boolean);
+  }
+
   function addMessage(text, sender) {
     const div = document.createElement("div");
     div.className = `chat-msg ${sender}`;
@@ -36,227 +36,199 @@
     const res = await fetch("./rules.json", { cache: "no-store" });
     const data = await res.json();
 
-    state.knowledge.rules = Array.isArray(data.rules) ? data.rules : [];
-    state.knowledge.reasonCodes = Array.isArray(data.reasonCodes) ? data.reasonCodes : [];
-    state.knowledge.lossCodes = Array.isArray(data.lossCodes) ? data.lossCodes : [];
+    const rules = (data.rules || []).map((text, index) => ({
+      type: "rule",
+      label: `Rule ${index + 1}`,
+      text
+    }));
+
+    const reasonCodes = (data.reasonCodes || []).map(code => ({
+      type: "reason",
+      label: code.title,
+      text: `${code.title}. ${code.definition}`
+    }));
+
+    const lossCodes = (data.lossCodes || []).map(code => ({
+      type: "loss",
+      label: code.title,
+      text: `${code.title}. ${code.definition}`
+    }));
+
+    state.knowledge = [...rules, ...reasonCodes, ...lossCodes];
   }
 
-  function hasAny(text, phrases) {
-    const t = normalize(text);
-    return phrases.some(p => t.includes(normalize(p)));
+  function getQuestionType(question) {
+    const q = normalize(question);
+
+    if (
+      q.startsWith("what is") ||
+      q.startsWith("what are") ||
+      q.startsWith("define") ||
+      q.includes("meaning of")
+    ) {
+      return "definition";
+    }
+
+    if (
+      q.includes("what to do") ||
+      q.startsWith("how to") ||
+      q.startsWith("how do i") ||
+      q.includes("what should i do")
+    ) {
+      return "action";
+    }
+
+    if (
+      q.includes("is it loss") ||
+      q.includes("already paid") ||
+      q.includes("paid or") ||
+      q.includes("without paying")
+    ) {
+      return "decision";
+    }
+
+    return "general";
   }
 
-  function answerBlueSticker() {
-    return `A blue sticker usually means the item was already paid online, so it should not be treated as a loss.
+  function expandTokens(tokens) {
+    const extra = [];
+
+    for (const t of tokens) {
+      if (t === "sticler" || t === "stiker" || t === "stickr") extra.push("sticker");
+      if (t === "recall") extra.push("suspended");
+      if (t === "suspended") extra.push("recall");
+      if (t === "pickup") extra.push("online");
+      if (t === "scrap") extra.push("non-sellable");
+      if (t === "sellable") extra.push("merchandise");
+    }
+
+    return [...new Set([...tokens, ...extra])];
+  }
+
+  function scoreItem(question, item) {
+    const qTokens = expandTokens(tokenize(question));
+    const text = normalize(item.text);
+
+    let score = 0;
+
+    for (const token of qTokens) {
+      if (text.includes(token)) score += 2;
+    }
+
+    const q = normalize(question);
+
+    if (q.includes("blue sticker") && text.includes("blue sticker")) score += 15;
+    if (q.includes("recall") && text.includes("recall")) score += 12;
+    if (q.includes("suspended") && text.includes("suspended")) score += 12;
+    if (q.includes("3.4") && text.includes("3.4")) score += 8;
+    if (q.includes("scrap") && text.includes("sellable merchandise")) score += 6;
+    if (q.includes("non sellable") && text.includes("sellable merchandise")) score += 6;
+
+    return score;
+  }
+
+  function findBestMatches(question, limit = 3) {
+    return state.knowledge
+      .map(item => ({ ...item, score: scoreItem(question, item) }))
+      .filter(item => item.score > 0)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, limit);
+  }
+
+  function buildAnswer(question, matches) {
+    const qType = getQuestionType(question);
+    const q = normalize(question);
+
+    if (!matches.length) {
+      return `I could not find a clear handbook match for that question.
+
+Please ask with more detail, such as:
+- item type
+- whether it was scanned
+- whether it may be paid already
+- whether it may be a pickup, recall, or suspended transaction`;
+    }
+
+    if (q.includes("blue sticker")) {
+      return `A blue sticker usually means the item was already paid online, so it should not be treated as a loss.
 
 What you should do:
-- Confirm the blue sticker belongs to that exact item.
+- Confirm the sticker belongs to that exact item.
 - Check the related pickup or online order record in 3.4.
-- Review pickup-area or nearby camera footage if needed.
 - Match the item details before making the final decision.
 
 Best conclusion:
-If the sticker and transaction match the item, it is already paid and not a loss.`;
-  }
+If the sticker and the transaction match the item, it is already paid and not a loss.`;
+    }
 
-  function answerCantFindIn34() {
-    return `If you cannot find the item in 3.4, do not mark it as loss immediately.
-
-What you should do:
-- Search again using the item number.
-- If the full item number is not visible, use the number on the packaging and complete any partial number before searching.
-- Check nearby registers, terminals, prior transactions, next transactions, and separate purchases.
-- Check whether it was an online pickup, special order, or paid at another location.
-- Use pickup stickers, pickup-area cameras, and other camera angles to confirm what happened.
+    if (q.includes("recall") || q.includes("suspended")) {
+      if (qType === "definition") {
+        return `Recall or suspended transaction means the item was already bagged or part of a suspended transaction.
 
 Best approach:
-Only mark loss after you have ruled out prior payment, pickup, or a legitimate correction.`;
-  }
+Review what the camera shows when the transaction is recalled and completed, and judge the item based on that point in the transaction.`;
+      }
 
-  function answerMissedScanNotFoundIn34() {
-    return `If one item was not scanned and you cannot find it in 3.4, do not assume loss right away.
-
-What you should do:
-- Confirm the exact item first by size, type, packaging, or item number.
-- Search 3.4 again using the best item number available.
-- Check nearby registers, prior transactions, next transactions, and separate purchases.
-- Confirm whether the item was already paid at another terminal or through pickup.
-- Review video to see whether the item was actually scanned, removed, returned, or left behind.
-
-Best approach:
-Treat it as possible loss only after you have ruled out prior payment, pickup, or a legitimate correction.`;
-  }
-
-  function answerPaidOtherTerminal() {
-    return `This looks more like an already-paid situation than a confirmed loss.
+      return `For a recall or suspended transaction, review what the camera shows when the transaction is recalled and completed.
 
 What you should do:
-- Check whether the item was paid online or at another terminal.
-- Look for a related pickup record or separate transaction.
-- Match the item carefully by description, size, SKU, or sticker.
-- Review nearby transactions before deciding.
+- Confirm the item was part of the suspended or recalled transaction.
+- Check whether it was already bagged.
+- Review the transaction completion point carefully before deciding there is loss.
 
 Best approach:
-Confirm payment first. Do not treat it as loss just because it is missing from the current transaction.`;
-  }
+Do not treat it as loss just because the item appears before recall. Judge it based on what happens when the transaction is resumed and completed.`;
+    }
 
-  function answerPersonalItem() {
-    return `This may be a customer-brought-in or personal-item situation, so do not assume loss yet.
-
-What you should do:
-- Review entry cameras and earlier footage.
-- Confirm whether the customer already had the item before checkout.
-- Compare the item carefully with store merchandise.
-- Use other camera angles if the checkout view is unclear.
-
-Best approach:
-Only treat it as store loss if both the video and the transaction support that conclusion.`;
-  }
-
-  function answerBarcodeSwitch() {
-    return `This could be barcode switching, but it should be confirmed carefully.
-
-What you should do:
-- Compare the scanned description with the item actually in hand.
-- Check the size, type, model, and packaging.
-- Confirm the barcode came from the actual sellable item.
-- Review related transactions if needed.
-
-Best approach:
-Only treat it as barcode switching when the scanned item clearly does not match the actual item.`;
-  }
-
-  function answerScanIssue() {
-    return `This looks like a scan issue that needs review before you decide whether there is loss.
-
-What you should do:
-- Check whether the customer tried to scan the item.
-- Confirm whether the item was later added, removed, or paid in another step.
-- Match the item movement in video with the transaction activity.
-- Review nearby transactions if the item does not appear in the current one.
-
-Best approach:
-Confirm what happened to the item before deciding whether it is unpaid.`;
-  }
-
-  function answerNonSellableItem() {
-    return `First confirm whether the item is actually sellable merchandise.
+    if (q.includes("scrap") || q.includes("non sellable") || q.includes("sellable lumber")) {
+      return `First confirm whether the item is actually sellable merchandise.
 
 What you should do:
 - Check whether it is scrap wood, damaged cut-off material, or other non-sellable leftover material.
-- Confirm whether it is a normal sellable product or just unusable scrap.
+- Confirm whether it is a normal sellable lumber product or just unusable scrap.
 - Review the item appearance and surrounding context before calling it loss.
-- Compare it with sellable inventory standards used in that area if needed.
 
 Best approach:
 If it is scrap or non-sellable material, it should not be treated as sellable loss.`;
-  }
+    }
 
-  function answerGeneric() {
-    return `I would not make a loss decision immediately.
+    if (qType === "definition") {
+      return `Based on the handbook, this means:
 
-What you should do:
-- Confirm the exact item identity.
-- Check 3.4 carefully for the current, nearby, prior, or separate transaction.
-- Review camera angles to confirm whether the item was brought in, paid, picked up, removed, or left behind.
-- Rule out pickup, prior payment, or legitimate correction before marking loss.
+${matches[0].text}`;
+    }
+
+    if (qType === "action") {
+      return `Based on the handbook, here is the best next step:
+
+- ${matches.map(m => m.text).join("\n- ")}
 
 Best approach:
-Use the transaction details and video together, then decide.`;
-  }
+Use the camera view and transaction details together before deciding whether there is loss.`;
+    }
 
-  function makeAnswer(question) {
-    const q = normalize(question);
+    if (qType === "decision") {
+      return `Based on the handbook, this should be decided by checking the most relevant transaction and video evidence first.
 
-    const mentionsBlueSticker = hasAny(q, [
-      "blue sticker",
-      "blue stiker",
-      "blue sticler",
-      "blue stickr",
-      "blue label",
-      "blue tag",
-      "blue pickup sticker"
-    ]);
+Most relevant guidance:
+- ${matches.map(m => m.text).join("\n- ")}
 
-    const mentions34 = hasAny(q, ["3.4", "genesis 3.4"]);
-    const mentionsCantFind = hasAny(q, [
-      "can't find",
-      "cant find",
-      "cannot find",
-      "not found",
-      "nothing in 3.4",
-      "unable to find"
-    ]);
+Best approach:
+Only decide loss after ruling out payment, pickup, prior transaction, or legitimate correction.`;
+    }
 
-    const mentionsMissedScan = hasAny(q, [
-      "didn't scan",
-      "didnt scan",
-      "did not scan",
-      "not scanned",
-      "missed scan",
-      "scan not registered"
-    ]);
+    return `Here is the most relevant handbook guidance for your question:
 
-    const mentionsPaid = hasAny(q, [
-      "already paid",
-      "prepaid",
-      "pre paid",
-      "paid online",
-      "paid at another terminal",
-      "other terminal",
-      "pickup"
-    ]);
+- ${matches.map(m => m.text).join("\n- ")}
 
-    const mentionsPersonal = hasAny(q, [
-      "personal item",
-      "brought in",
-      "customer brought in"
-    ]);
-
-    const mentionsBarcode = hasAny(q, [
-      "barcode",
-      "ticket switching",
-      "wrong barcode"
-    ]);
-
-    const mentionsScanIssue = hasAny(q, [
-      "failed to scan",
-      "scan issue",
-      "didn't scan",
-      "did not scan",
-      "not scanned"
-    ]);
-
-    const mentionsNonSellable = hasAny(q, [
-      "scrap wood",
-      "scrap lumber",
-      "non sellable",
-      "not sellable",
-      "sellable lumber",
-      "lumber product",
-      "scrap",
-      "sample",
-      "empty packaging",
-      "giveaway",
-      "not merchandise",
-      "non merchandise"
-    ]);
-
-    if (mentionsBlueSticker) return answerBlueSticker();
-    if (mentionsNonSellable) return answerNonSellableItem();
-    if (mentions34 && mentionsCantFind && mentionsMissedScan) return answerMissedScanNotFoundIn34();
-    if (mentions34 && mentionsCantFind) return answerCantFindIn34();
-    if (mentionsPersonal) return answerPersonalItem();
-    if (mentionsBarcode) return answerBarcodeSwitch();
-    if (mentionsScanIssue) return answerScanIssue();
-    if (mentionsPaid) return answerPaidOtherTerminal();
-
-    return answerGeneric();
+Best approach:
+Use the strongest matching handbook rule together with the transaction and camera review.`;
   }
 
   async function handleAsk(question) {
     addMessage(question, "user");
-    const answer = makeAnswer(question);
+    const matches = findBestMatches(question, 3);
+    const answer = buildAnswer(question, matches);
     addMessage(answer, "bot");
   }
 
@@ -285,7 +257,7 @@ Use the transaction details and video together, then decide.`;
   }
 
   loadKnowledge().then(() => {
-    console.log("chatbot-v3 rules loaded");
+    console.log("chatbot-v4 knowledge loaded");
   }).catch(() => {
     addMessage(
       "I could not load the handbook rules. Please make sure rules.json is in the same folder as index.html.",
