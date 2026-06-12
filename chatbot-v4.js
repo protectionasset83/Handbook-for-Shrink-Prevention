@@ -1,5 +1,5 @@
 (() => {
-  console.log("chatbot-v4 loaded");
+  console.log("chatbot-v5 loaded");
 
   const state = {
     knowledge: []
@@ -11,6 +11,17 @@
   const chatForm = document.getElementById("chatForm");
   const chatInput = document.getElementById("chatInput");
   const chatMessages = document.getElementById("chatMessages");
+
+  const GLOSSARY = {
+    "loss": "Loss means unpaid sellable merchandise that should have been paid for but was not properly included in the completed transaction.",
+    "sku": "SKU means Stock Keeping Unit. It is an identifier used to distinguish a specific product or product variant.",
+    "3.4": "3.4 refers to Genesis 3.4, which is used to search transaction history and verify whether an item was paid for.",
+    "genesis 3.4": "Genesis 3.4 is used to search transaction history and verify whether an item was paid for."
+  };
+
+  const FALLBACK = `I could not find a confirmed handbook answer for this question.
+Please do not rely on this response alone for a final loss decision.
+Kindly request that this scenario be added to the handbook if needed.`;
 
   function normalize(text) {
     return String(text || "")
@@ -108,14 +119,13 @@
   function scoreItem(question, item) {
     const qTokens = expandTokens(tokenize(question));
     const text = normalize(item.text);
+    const q = normalize(question);
 
     let score = 0;
 
     for (const token of qTokens) {
-      if (text.includes(token)) score += 2;
+      if (token.length >= 3 && text.includes(token)) score += 2;
     }
-
-    const q = normalize(question);
 
     if (q.includes("blue sticker") && text.includes("blue sticker")) score += 15;
     if (q.includes("recall") && text.includes("recall")) score += 12;
@@ -135,14 +145,35 @@
       .slice(0, limit);
   }
 
+  function getGlossaryAnswer(question) {
+    const q = normalize(question);
+
+    if (q === "what is loss" || q === "loss" || q.includes("what is loss")) {
+      return GLOSSARY["loss"];
+    }
+
+    if (q === "what is sku" || q === "sku" || q.includes("what is sku")) {
+      return GLOSSARY["sku"];
+    }
+
+    if (q === "what is 3.4" || q.includes("what is 3.4") || q.includes("what is genesis 3.4")) {
+      return GLOSSARY["3.4"];
+    }
+
+    return null;
+  }
+
   function buildAnswer(question, matches) {
     const qType = getQuestionType(question);
     const q = normalize(question);
 
-    if (!matches.length) {
-      return `I could not find a confirmed handbook answer for this question.
-Please do not rely on this response alone for a final loss decision.
-Kindly request that this scenario be added to the handbook if needed.`;
+    const glossaryAnswer = getGlossaryAnswer(question);
+    if (glossaryAnswer) {
+      return glossaryAnswer;
+    }
+
+    if (!matches.length || matches[0].score < 6) {
+      return FALLBACK;
     }
 
     if (q.includes("blue sticker")) {
@@ -189,6 +220,7 @@ If it is scrap or non-sellable material, it should not be treated as sellable lo
     }
 
     if (qType === "definition") {
+      if (matches[0].score < 8) return FALLBACK;
       return `Based on the handbook, this means:
 
 ${matches[0].text}`;
@@ -211,6 +243,10 @@ Most relevant guidance:
 
 Best approach:
 Only decide loss after ruling out payment, pickup, prior transaction, or legitimate correction.`;
+    }
+
+    if (matches[0].score < 8) {
+      return FALLBACK;
     }
 
     return `Here is the most relevant handbook guidance for your question:
@@ -253,7 +289,7 @@ Use the strongest matching handbook rule together with the transaction and camer
   }
 
   loadKnowledge().then(() => {
-    console.log("chatbot-v4 knowledge loaded");
+    console.log("chatbot-v5 knowledge loaded");
   }).catch(() => {
     addMessage(
       "I could not load the handbook rules. Please make sure rules.json is in the same folder as index.html.",
