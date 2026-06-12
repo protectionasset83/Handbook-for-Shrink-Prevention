@@ -348,7 +348,7 @@ Use the strongest matching handbook rule together with the transaction and camer
   }
 
   loadKnowledge().then(() => {
-    console.log("chatbot-v6 knowledge loaded");
+    console.log("chatbot-v4 knowledge loaded");
   }).catch(() => {
     addMessage(
       "I could not load the handbook rules. Please make sure rules.json is in the same folder as index.html.",
