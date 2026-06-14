@@ -21,9 +21,33 @@
 
   const GLOSSARY = {
     "loss": "Loss means unpaid sellable merchandise that should have been paid for but was not properly included in the completed transaction.",
-    "sku": "SKU means Stock Keeping Unit. It is an identifier used to distinguish a specific product or product variant.",
-    "3.4": "3.4 refers to Genesis 3.4, which is used to search transaction history and verify whether an item was paid for.",
-    "genesis 3.4": "Genesis 3.4 is used to search transaction history and verify whether an item was paid for."
+    "sku": "SKU means the identifier for a specific product or product variant. Reviewers should distinguish similar items by size, type, and SKU.",
+    "3.4": "Genesis 3.4 is the transaction-history lookup used to verify payment, scans, removals, quantity edits, pickups, and related transactions.",
+    "genesis 3.4": "Genesis 3.4 is the transaction-history lookup used to verify payment, scans, removals, quantity edits, pickups, and related transactions.",
+    "recall / suspended transaction": "Recall or Suspended Transaction means a transaction where items may already be bagged or suspended. Review what the camera shows when the transaction is recalled and completed.",
+    "recall transaction": "Recall or Suspended Transaction means a transaction where items may already be bagged or suspended. Review what the camera shows when the transaction is recalled and completed.",
+    "suspended transaction": "Recall or Suspended Transaction means a transaction where items may already be bagged or suspended. Review what the camera shows when the transaction is recalled and completed.",
+    "upc": "UPC means the barcode number used to identify a product during scanning.",
+    "item number": "Item Number means the store item identifier used to search and verify a product.",
+    "transaction": "Transaction means the full checkout record for a customer purchase attempt.",
+    "terminal": "Terminal means the register or checkout station where the transaction happened.",
+    "separate purchase": "Separate Purchase means a different transaction that may explain why an item does not appear in the current one.",
+    "prior purchase": "Prior Purchase means an earlier completed purchase that may show the item was already paid for.",
+    "pickup order": "Pickup Order means an online or fulfillment order collected by the customer.",
+    "special order": "Special Order means an order placed separately from standard in-store shelf merchandise.",
+    "sellable merchandise": "Sellable Merchandise means store product that is actually meant for sale and can count as loss if unpaid.",
+    "non-sellable merchandise": "Non-Sellable Merchandise means damaged, scrap, sample, display-only, or otherwise non-sellable material that should not be treated as normal loss.",
+    "non sellable merchandise": "Non-Sellable Merchandise means damaged, scrap, sample, display-only, or otherwise non-sellable material that should not be treated as normal loss.",
+    "customer brought in": "Customer Brought In means an item the customer already had before entering the store.",
+    "scan attempt": "Scan Attempt means the customer tries to scan the item, whether or not it registers correctly.",
+    "quantity edit": "Quantity Edit means a change made to the quantity on the register screen.",
+    "removed item": "Removed Item means an item that appeared in the transaction but was later removed.",
+    "register prompt": "Register Prompt means a message or screen prompt that can interrupt or affect scanning.",
+    "entry camera": "Entry Camera means the camera view used to confirm whether an item was already with the customer before checkout.",
+    "camera angle": "Camera Angle means the video perspective used to verify item identity, quantity, or movement.",
+    "snapshot window": "Snapshot Window means the review image or frame used to inspect the transaction visually.",
+    "reviewer": "Reviewer means the person analyzing the transaction and deciding the correct classification.",
+    "final loss decision": "Final Loss Decision means the final judgment after checking transaction details, product identity, and video evidence."
   };
 
   const FALLBACK = `I could not find a confirmed handbook answer for this question.
@@ -192,16 +216,17 @@ Kindly request that this scenario be added to the handbook if needed.`;
   function getGlossaryAnswer(question) {
     const q = normalize(question);
 
-    if (q === "what is loss" || q === "loss" || q.includes("what is loss")) {
-      return GLOSSARY["loss"];
-    }
-
-    if (q === "what is sku" || q === "sku" || q.includes("what is sku")) {
-      return GLOSSARY["sku"];
-    }
-
-    if (q === "what is 3.4" || q.includes("what is 3.4") || q.includes("what is genesis 3.4")) {
-      return GLOSSARY["3.4"];
+    for (const key in GLOSSARY) {
+      if (
+        q === key ||
+        q === `what is ${key}` ||
+        q === `define ${key}` ||
+        q.includes(`what is ${key}`) ||
+        q.includes(`define ${key}`) ||
+        q.includes(`meaning of ${key}`)
+      ) {
+        return GLOSSARY[key];
+      }
     }
 
     return null;
